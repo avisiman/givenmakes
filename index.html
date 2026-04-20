@@ -4283,13 +4283,16 @@ function openDetailSeamless(itemId) {
       const W = window.innerWidth;
       const H = window.innerHeight;
       canvasData.renderer.setSize(W, H);
+      // Keep camera position EXACTLY as-is — only update aspect.
+      // Vertical FOV is fixed in Three.js, so model keeps same vertical size.
+      // Do NOT change position.z — that causes the jump.
       canvasData.camera.aspect = W / H;
       canvasData.camera.updateProjectionMatrix();
-      canvasData.camera.position.z = 3.2;
+      // OrbitControls: keep current distance, just widen the bounds slightly
       if (_seamlessControls) {
-        _seamlessControls.minDistance = 2.0;
-        _seamlessControls.maxDistance = 7.0;
-        _seamlessControls.update();
+        _seamlessControls.minDistance = 1.2;
+        _seamlessControls.maxDistance = 5.0;
+        // Do NOT call update() here — that would reset the camera position
       }
       canvasData._detailExpanded = true;
     });
@@ -4313,8 +4316,10 @@ function closeDetailSeamless() {
     const size = canvasData._origSize || 400;
     canvasData.renderer.setSize(size, size);
     canvasData.camera.aspect = 1;
-    canvasData.camera.position.z = 2.0;
     canvasData.camera.updateProjectionMatrix();
+    // Reset camera to gallery position after controls are disposed
+    canvasData.camera.position.set(0, 0, 2.0);
+    canvasData.camera.lookAt(0, 0, 0);
     canvasData._detailExpanded = false;
   }
 
@@ -4404,8 +4409,9 @@ function _closeSeamlessImmediate() {
     const size = cd._origSize || 400;
     cd.renderer.setSize(size, size);
     cd.camera.aspect = 1;
-    cd.camera.position.z = 2.0;
     cd.camera.updateProjectionMatrix();
+    cd.camera.position.set(0, 0, 2.0);
+    cd.camera.lookAt(0, 0, 0);
     cd._detailExpanded = false;
   }
   // Remove backlight if present
