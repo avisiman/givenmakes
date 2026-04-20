@@ -342,12 +342,12 @@ html, body {
 
 /* Category eyebrow */
 .gallery-cat {
-  font-size: 8px;
-  letter-spacing: 3px;
+  font-size: 11px;
+  letter-spacing: 3.5px;
   text-transform: uppercase;
   color: var(--accent);
-  font-weight: 400;
-  margin-bottom: 3px;
+  font-weight: 500;
+  margin-bottom: 6px;
 }
 
 /* Title — ~1.75rem anchor size */
@@ -2707,14 +2707,36 @@ html, body {
   background: transparent !important;
 }
 
-/* Text block fades out */
+/* Text block: hide all except title in detail mode */
 .gallery-card-info {
   transition: opacity 0.4s ease;
 }
 
 .gallery-card.detail-active .gallery-card-info {
-  opacity: 0;
+  opacity: 1;
   pointer-events: none;
+  overflow: visible;
+  /* Push down slightly so content clears the model */
+  bottom: calc(var(--nav) + 8%);
+}
+
+/* Hide category, creator row, location in detail — title stays as anchor */
+.gallery-card.detail-active .gallery-creator-row,
+.gallery-card.detail-active .gallery-location {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* gallery-cat stays visible in detail — same position/size as gallery */
+.gallery-card.detail-active .gallery-cat {
+  color: rgba(255,255,255,0.5);
+  transition: color 0.5s ease;
+}
+
+/* Title: stays exactly in place, colour shifts to white */
+.gallery-card.detail-active .gallery-title {
+  color: rgba(255,255,255,0.92);
+  transition: color 0.5s ease;
 }
 
 /* Detail overlay UI — back button + actions — appears on detail-active */
@@ -2781,40 +2803,75 @@ html, body {
   color: var(--gold);
 }
 
-/* Item info strip — slides up from bottom in detail mode */
+/* detail-info-strip: hidden in gallery, flows below title in detail */
 .detail-info-strip {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1700;
-  padding: 20px 26px calc(var(--nav) + 16px);
-  direction: rtl;
-  opacity: 0;
-  transform: translateY(20px);
+  display: none;         /* hidden in gallery — shown only in detail */
   pointer-events: none;
-  transition: opacity 0.4s ease 0.35s, transform 0.4s ease 0.35s;
+  margin-top: 10px;
+  padding-bottom: 8px;
 }
 
 .gallery-card.detail-active .detail-info-strip {
-  opacity: 1;
-  transform: translateY(0);
+  display: block;
   pointer-events: all;
 }
 
-.detail-info-title-sm {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: rgba(255,255,255,0.88);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-bottom: 3px;
+/* Layer A: creator / location / year — delay 1.2s */
+.detail-info-layer-a {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1.5s ease 1.2s, transform 1.0s ease 1.2s;
+  margin-bottom: 8px;
 }
 
+.gallery-card.detail-active .detail-info-layer-a {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Layer B: description — delay 2.0s */
+.detail-info-layer-b {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 1.5s ease 2.0s, transform 1.0s ease 2.0s;
+}
+
+.gallery-card.detail-active .detail-info-layer-b {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* detail-info-title-sm hidden — title anchor is gallery-title */
+.detail-info-title-sm { display: none; }
+
+/* Layer A: creator · location · year — matches gallery-creator-row scale */
 .detail-info-meta {
-  font-size: 11px;
-  color: rgba(255,255,255,0.4);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.55);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+
+.detail-info-meta-dot {
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  flex-shrink: 0;
+}
+
+/* Layer B: description — readable body text */
+.detail-info-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  color: rgba(255,255,255,0.45);
+  line-height: 1.65;
+  font-weight: 300;
+  margin-top: 2px;
 }
 
 </style>
@@ -4015,6 +4072,23 @@ function initGallery() {
       <div class="gallery-card-info">
         <div class="gallery-cat">${item.category}</div>
         <div class="gallery-title">${item.title}</div>
+        <!-- Detail layers — hidden in gallery, appear in detail below title -->
+        <div class="detail-info-strip">
+          <!-- Layer A: creator / location / year (delay 1.2s) -->
+          <div class="detail-info-layer-a">
+            <div class="detail-info-meta">
+              <span>${item.creatorName || item.creator || ''}</span>
+              ${(item.city || item.location) ? `<span class="detail-info-meta-dot">·</span><span>${item.city || item.location}</span>` : ''}
+              ${item.year ? `<span class="detail-info-meta-dot">·</span><span>${item.year}</span>` : ''}
+            </div>
+          </div>
+          <!-- Layer B: description (delay 2.0s) -->
+          ${item.description ? `
+          <div class="detail-info-layer-b">
+            <div class="detail-info-desc">${item.description.length > 130 ? item.description.slice(0, 127) + '…' : item.description}</div>
+          </div>` : ''}
+        </div>
+        <!-- Gallery-only rows — hidden in detail -->
         <div class="gallery-creator-row">
           <span class="gallery-creator-link" onclick="event.stopPropagation(); openPublicProfile('${item.creatorName || item.creator}')">${item.creatorName || item.creator}</span>
           <span class="gallery-creator-sep">·</span>
@@ -4022,12 +4096,8 @@ function initGallery() {
         </div>
         <div class="gallery-location">${item.city || item.location || ''}</div>
       </div>
-      <!-- Floating back button only — no header bar -->
+      <!-- Floating back button -->
       <button class="detail-back-float" onclick="event.stopPropagation(); closeDetailSeamless()">חזרה</button>
-      <div class="detail-info-strip">
-        <div class="detail-info-title-sm">${item.title}</div>
-        <div class="detail-info-meta">${item.creatorName || item.creator} · ${item.city || item.location || ''}</div>
-      </div>
     `;
     
     track.appendChild(card);
@@ -4295,7 +4365,12 @@ function closeDetailSeamless() {
   const fadeEl     = document.getElementById('fade-overlay');
   const galleryEl  = document.getElementById('gallery-screen');
 
-  // ── STEP 1: Black overlay covers everything ──
+  // ── STEP 1: Instantly hide detail layers + restore title colour ──
+  const _la = card.querySelector('.detail-info-layer-a');
+  const _lb = card.querySelector('.detail-info-layer-b');
+  const _gt = card.querySelector('.gallery-title');
+  [_la, _lb].forEach(el => { if (el) { el.style.transition = 'none'; el.style.opacity = '0'; } });
+  if (_gt) { _gt.style.transition = 'none'; _gt.style.color = ''; }
   if (fadeEl) fadeEl.style.opacity = '1';
   // Also set gallery to invisible so it fades in, not pops in
   if (galleryEl) galleryEl.style.opacity = '0';
@@ -4350,6 +4425,14 @@ function closeDetailSeamless() {
       galleryEl.style.scrollBehavior = '';
     }
 
+    // Restore layers for next open
+    const _layerA = card.querySelector('.detail-info-layer-a');
+    const _layerB = card.querySelector('.detail-info-layer-b');
+    const _title  = card.querySelector('.gallery-title');
+    [_layerA, _layerB].forEach(el => {
+      if (el) { el.style.transition = ''; el.style.opacity = ''; el.style.transform = ''; }
+    });
+    if (_title) _title.style.transition = '';
     // Remove detail classes
     _seamlessIsDetail   = false;
     _seamlessActiveCard = null;
