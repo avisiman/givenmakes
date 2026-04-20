@@ -137,6 +137,7 @@ html, body {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
+  transition: opacity 1.2s ease-out;
 }
 
 #gallery-screen::-webkit-scrollbar {
@@ -2666,16 +2667,20 @@ html, body {
   z-index: 1600;
   cursor: default;
   overflow: visible;
-  transition: background 0.5s ease;
-  isolation: isolate;  /* Own stacking context — children z-index relative to card */
+  transition: background 0.5s ease, opacity 0.5s ease;
+  isolation: isolate;
 }
 
-/* Stage: deep black in detail mode — PADDING/JUSTIFY UNCHANGED */
+/* detail-dissolve removed — using #fade-overlay instead */
+
+/* Stage: beam as background — stage already covers full card */
 .gallery-card.detail-active .gallery-card-stage {
-  background: #000000;
-  transition: background 0.5s ease;
+  background-color: #000000;
+  background-size: cover;
+  background-position: center top;
+  transition: background-color 0.5s ease;
   overflow: visible;
-  padding-bottom: 0;   /* Remove upward push — beam needs full centered space */
+  padding-bottom: 69%; /* KEEP original — model stays in same vertical position */
   justify-content: center;
 }
 
@@ -2694,29 +2699,12 @@ html, body {
 /* Object: restore pointer events for OrbitControls */
 .gallery-card.detail-active .gallery-obj-wrap {
   pointer-events: all;
-  animation: none;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  z-index: 1600;
-  /* Beam as background — canvas is transparent so beam shows through */
-  background-color: #000000 !important;
-  background-image: none;  /* set by JS when beam loads */
-  background-size: cover;
-  background-position: center top;
-  overflow: visible;
-  transition: background-image 0s;
+  animation: none;  /* Stop float — position unchanged */
+  /* NO position:fixed — wrap stays in original layout position */
 }
 
 .gallery-card.detail-active .gallery-obj-wrap canvas {
-  width: 100% !important;
-  height: 100% !important;
   background: transparent !important;
-  display: block;
-  position: relative;
-  z-index: 2;
 }
 
 /* Text block fades out */
@@ -2733,6 +2721,17 @@ html, body {
 /* ── Floating back button — fixed position, no background ── */
 /* beam-overlay replaced by wrap background-image approach */
 #beam-overlay { display: none !important; }
+
+/* Fade overlay — black screen for transitions */
+#fade-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease-in-out;
+}
 
 .detail-back-float {
   position: fixed;
@@ -2834,6 +2833,9 @@ html, body {
 
 <!-- Beam Overlay — CSS layer shown only in detail mode -->
 <div id="beam-overlay"></div>
+
+<!-- Fade Overlay — black screen for seamless transitions -->
+<div id="fade-overlay"></div>
 
 <!-- Gallery Screen -->
 <div id="gallery-screen" class="screen active">
@@ -4268,35 +4270,19 @@ function openDetailSeamless(itemId) {
     canvasData.scene.add(backlight.target);
   }
 
-  // ── EXPAND canvas to full screen + set beam as wrap background ──
+  // ── BEAM on stage background — wrap stays in place, no renderer resize ──
   if (canvasData) {
-    const wrap = document.getElementById(`gallery-wrap-${itemId}`);
-    // Store original square size before CSS changes it
-    const origSize = Math.min(wrap.offsetWidth, wrap.offsetHeight) || 400;
-    canvasData._origSize = origSize;
-
-    // Set beam image as background of the wrap (canvas is transparent on top)
+    const stage = _seamlessActiveCard.querySelector('.gallery-card-stage');
     const beamUrl = 'https://raw.githubusercontent.com/avisiman/givenmakes-assets/main/assets/beam.jpg';
-    wrap.style.backgroundImage = `url('${beamUrl}')`;
-
-    requestAnimationFrame(() => {
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-      canvasData.renderer.setSize(W, H);
-      // Keep camera position EXACTLY as-is — only update aspect.
-      // Vertical FOV is fixed in Three.js, so model keeps same vertical size.
-      // Do NOT change position.z — that causes the jump.
-      canvasData.camera.aspect = W / H;
-      canvasData.camera.updateProjectionMatrix();
-      // OrbitControls: keep current distance, just widen the bounds slightly
-      if (_seamlessControls) {
-        _seamlessControls.minDistance = 1.2;
-        _seamlessControls.maxDistance = 5.0;
-        // Do NOT call update() here — that would reset the camera position
-      }
-      canvasData._detailExpanded = true;
-    });
+    if (stage) stage.style.backgroundImage = `url('${beamUrl}')`;
+    // NO renderer resize — canvas stays its original square size
+    // NO camera changes — model appears exactly as in gallery
+    canvasData._detailExpanded = true;
   }
+
+  // Save gallery scroll position for restore on close
+  const _galleryEl = document.getElementById('gallery-screen');
+  if (canvasData && _galleryEl) canvasData._savedScrollLeft = _galleryEl.scrollLeft;
 
   history.pushState({ gm: 'active' }, '');
 }
@@ -4306,97 +4292,83 @@ function closeDetailSeamless() {
   const card       = _seamlessActiveCard;
   const itemId     = _seamlessItemId;
   const canvasData = galleryCanvases[itemId];
+  const fadeEl     = document.getElementById('fade-overlay');
+  const galleryEl  = document.getElementById('gallery-screen');
 
-  // 0. Remove beam background from wrap + restore renderer
-  if (canvasData && canvasData._detailExpanded) {
-    const wrap = document.getElementById(`gallery-wrap-${itemId}`);
-    // Clear beam background immediately
-    if (wrap) wrap.style.backgroundImage = 'none';
-    // Use stored original size — don't rely on offsetWidth after CSS changes
-    const size = canvasData._origSize || 400;
-    canvasData.renderer.setSize(size, size);
-    canvasData.camera.aspect = 1;
-    canvasData.camera.updateProjectionMatrix();
-    // Reset camera to gallery position after controls are disposed
-    canvasData.camera.position.set(0, 0, 2.0);
-    canvasData.camera.lookAt(0, 0, 0);
-    canvasData._detailExpanded = false;
-  }
+  // ── STEP 1: Black overlay covers everything ──
+  if (fadeEl) fadeEl.style.opacity = '1';
+  // Also set gallery to invisible so it fades in, not pops in
+  if (galleryEl) galleryEl.style.opacity = '0';
 
-  // 0c. Remove detail backlight from scene
-  if (canvasData && canvasData.scene) {
-    const bl = canvasData.scene.getObjectByName('_detailBacklight');
-    if (bl) {
-      bl.intensity = 0;
-      if (bl.target) canvasData.scene.remove(bl.target);
-      canvasData.scene.remove(bl);
+  // ── STEP 2: After 420ms (overlay fully black), reset everything invisibly ──
+  setTimeout(() => {
+
+    // Clear beam from stage
+    if (canvasData && canvasData._detailExpanded) {
+      const stage = card.querySelector('.gallery-card-stage');
+      if (stage) stage.style.backgroundImage = 'none';
+      canvasData._detailExpanded = false;
     }
-  }
 
-  // 1. Dispose OrbitControls immediately — reset target first
-  if (_seamlessControls) {
-    _seamlessControls.target.set(0, 0, 0);
-    _seamlessControls.update();
-    _seamlessControls.dispose();
-    _seamlessControls      = null;
-    window._detailControls = null;
-  }
-
-  // 2. Hard-reset camera to gallery values — no tween, no drift
-  if (canvasData) {
-    canvasData.camera.position.set(0, 0, 2.0);
-    canvasData.camera.lookAt(0, 0, 0);
-  }
-
-  // 3. Reset world-navigation accumulators — fresh start, no ghost swipe
-  wTouchStartY    = 0;
-  wTouchStartX    = 0;
-  wIsDraggingWorld = false;
-  wheelAccum      = 0;
-
-  // 3. Tween ONLY mesh x/z rotation — gallery loop takes over y
-  const mesh = canvasData?.mesh;
-  if (mesh && canvasData) {
-    const { renderer, scene, camera } = canvasData;
-    const startX = mesh.rotation.x;
-    const startZ = mesh.rotation.z;
-    // Normalize Y to nearest multiple of 2π so tween goes shortest path
-    const startY = mesh.rotation.y;
-    const targetY = Math.round(startY / (Math.PI * 2)) * Math.PI * 2;
-    const t0     = performance.now();
-    const ease   = t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
-
-    // Keep _seamlessIsDetail true during tween so gallery loop stays paused
-    _seamlessIsDetail = true;
-
-    function tick(now) {
-      const raw = Math.min(1, (now - t0) / 800);
-      const e   = ease(raw);
-      mesh.rotation.x = startX * (1 - e);
-      mesh.rotation.z = startZ * (1 - e);
-      mesh.rotation.y = startY + (targetY - startY) * e;
-      renderer.render(scene, camera);
-      if (raw < 1) { requestAnimationFrame(tick); return; }
-
-      // Tween done — hand back to gallery loop
-      mesh.rotation.set(0, 0, 0); // full reset — gallery loop takes over from 0
-      _seamlessIsDetail   = false;
-      _seamlessActiveCard = null;
-      _seamlessItemId     = null;
-      currentItem         = null;
-      card.classList.remove('detail-active');
-      document.getElementById('gallery-screen').classList.remove('detail-mode');
+    // Remove backlight
+    if (canvasData && canvasData.scene) {
+      const bl = canvasData.scene.getObjectByName('_detailBacklight');
+      if (bl) {
+        bl.intensity = 0;
+        if (bl.target) canvasData.scene.remove(bl.target);
+        canvasData.scene.remove(bl);
+      }
     }
-    requestAnimationFrame(tick);
 
-  } else {
+    // Dispose OrbitControls
+    if (_seamlessControls) {
+      _seamlessControls.target.set(0, 0, 0);
+      _seamlessControls.update();
+      _seamlessControls.dispose();
+      _seamlessControls      = null;
+      window._detailControls = null;
+    }
+
+    // Reset camera
+    if (canvasData) {
+      canvasData.camera.position.set(0, 0, 2.0);
+      canvasData.camera.lookAt(0, 0, 0);
+    }
+
+    // Reset nav accumulators
+    wTouchStartY = 0; wTouchStartX = 0;
+    wIsDraggingWorld = false; wheelAccum = 0;
+
+    // Reset mesh rotation instantly (hidden behind overlay)
+    const mesh = canvasData?.mesh;
+    if (mesh) mesh.rotation.set(0, 0, 0);
+
+    // Restore gallery scroll position — no visual jump (still under overlay)
+    if (galleryEl && canvasData?._savedScrollLeft !== undefined) {
+      galleryEl.style.scrollBehavior = 'auto';
+      galleryEl.scrollLeft = canvasData._savedScrollLeft;
+      galleryEl.style.scrollBehavior = '';
+    }
+
+    // Remove detail classes
     _seamlessIsDetail   = false;
     _seamlessActiveCard = null;
     _seamlessItemId     = null;
     currentItem         = null;
     card.classList.remove('detail-active');
-    document.getElementById('gallery-screen').classList.remove('detail-mode');
-  }
+    galleryEl?.classList.remove('detail-mode');
+
+    // ── STEP 3: Two frames to let DOM settle, then reveal gallery ──
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Fade out the black overlay
+        if (fadeEl) fadeEl.style.opacity = '0';
+        // Fade in the gallery
+        if (galleryEl) galleryEl.style.opacity = '1';
+      });
+    });
+
+  }, 800);
 }
 
 function _closeSeamlessImmediate() {
@@ -4404,14 +4376,8 @@ function _closeSeamlessImmediate() {
   // Immediate cleanup: clear beam bg + restore renderer
   const cd = galleryCanvases[_seamlessItemId];
   if (cd && cd._detailExpanded) {
-    const wrap = document.getElementById(`gallery-wrap-${_seamlessItemId}`);
-    if (wrap) wrap.style.backgroundImage = 'none';
-    const size = cd._origSize || 400;
-    cd.renderer.setSize(size, size);
-    cd.camera.aspect = 1;
-    cd.camera.updateProjectionMatrix();
-    cd.camera.position.set(0, 0, 2.0);
-    cd.camera.lookAt(0, 0, 0);
+    const stage = _seamlessActiveCard?.querySelector('.gallery-card-stage');
+    if (stage) stage.style.backgroundImage = 'none';
     cd._detailExpanded = false;
   }
   // Remove backlight if present
