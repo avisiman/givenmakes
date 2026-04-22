@@ -195,7 +195,7 @@ html, body {
   /* Raise model ~20% toward top edge */
   padding-bottom: 69%;
   padding-top: 0;
-  background: var(--bg);
+  background: var(--bg) !important;
   overflow: hidden;
 }
 
@@ -2754,15 +2754,31 @@ html, body {
 /* beam-overlay replaced by wrap background-image approach */
 #beam-overlay { display: none !important; }
 
-/* Fade overlay — black screen for transitions */
+/* Transition overlay — video player for seamless transitions */
 #fade-overlay {
   position: fixed;
   inset: 0;
-  background: #000;
   z-index: 9999;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.8s ease-in-out;
+  transition: opacity 0.5s ease-in-out;
+  background: var(--bg) !important;
+  overflow: hidden;
+}
+
+#fade-overlay video {
+  width: 45vw !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: multiply;
+  filter: contrast(120%) brightness(110%);
+  mask-image: radial-gradient(circle, black 55%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle, black 55%, transparent 100%);
 }
 
 .detail-back-float {
@@ -2908,17 +2924,34 @@ html, body {
 
 
 
+/* ── Global Logo — fixed in top-left, stable across all swipes ── */
+#global-logo {
+  position: fixed;
+  top: 6px;
+  left: 18px;
+  z-index: 10002;
+  pointer-events: none;
+  height: auto;
+  width: 90px;
+  max-width: 90px;
+  opacity: 0.9;
+  display: block;
+  transition: opacity 0.8s ease-in-out;
+}
+
 </style>
 </head>
 <body>
 
 <div id="app-container">
 
+<!-- Global Logo — fixed in top-left, stable across swipes/transitions -->
+<img id="global-logo"
+     src="https://raw.githubusercontent.com/avisiman/givenmakes-assets/main/assets/logo.png"
+     alt="GivenMakes">
+
 <!-- Fullscreen Button -->
 <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen Mode">⛶</button>
-
-<!-- Global Logo -->
-<img id="global-logo" src="https://raw.githubusercontent.com/avisiman/givenmakes-assets/main/assets/logo.png" alt="GivenMakes">
 
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loading-overlay">
@@ -2928,8 +2961,14 @@ html, body {
 <!-- Beam Overlay — CSS layer shown only in detail mode -->
 <div id="beam-overlay"></div>
 
-<!-- Fade Overlay — black screen for seamless transitions -->
-<div id="fade-overlay"></div>
+<!-- Transition Overlay — video between gallery and detail -->
+<div id="fade-overlay">
+  <video id="transition-video"
+         src="https://raw.githubusercontent.com/avisiman/givenmakes-assets/main/assets/transition.mp4"
+         muted playsinline preload="auto"
+         style="width:100%;height:100%;object-fit:cover;display:block;">
+  </video>
+</div>
 
 <!-- Gallery Screen -->
 <div id="gallery-screen" class="screen active">
@@ -4415,9 +4454,14 @@ function openDetailSeamless(itemId) {
 
   const fadeEl = document.getElementById('fade-overlay');
 
-  // ── STEP 1: Fade to black ──
+  // ── STEP 1: Fast fade-in overlay + start video ──
+  const logoEl = document.getElementById('global-logo');
+  if (logoEl) logoEl.style.opacity = '0';
+  const vid = document.getElementById('transition-video');
+  if (vid) { vid.currentTime = 0; vid.play().catch(() => {}); }
   if (fadeEl) fadeEl.style.opacity = '1';
 
+  // ── STEP 2 (500ms): overlay fully visible — switch content silently ──
   setTimeout(() => {
     // ── STEP 2: Open detail behind black screen ──
     _seamlessActiveCard = card;
@@ -4492,15 +4536,20 @@ function openDetailSeamless(itemId) {
     const _galleryEl = document.getElementById('gallery-screen');
     if (canvasData && _galleryEl) canvasData._savedScrollLeft = _galleryEl.scrollLeft;
 
-    // ── STEP 3: Fade back in to reveal detail ──
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (fadeEl) fadeEl.style.opacity = '0';
-      });
-    });
-
     history.pushState({ gm: 'active' }, '');
-  }, 800); // wait for fade-overlay transition (0.8s)
+
+    // ── STEP 3 (2500ms stage time): fast fade-out to reveal detail ──
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (fadeEl) fadeEl.style.opacity = '0';
+          if (logoEl) logoEl.style.opacity = '0.9';
+          setTimeout(() => { if (vid) { vid.pause(); vid.currentTime = 0; } }, 600);
+        });
+      });
+    }, 2000);
+
+  }, 500); // overlay fully opaque — switch content silently
 }
 
 function closeDetailSeamless() {
@@ -4517,11 +4566,14 @@ function closeDetailSeamless() {
   const _gt = card.querySelector('.gallery-title');
   [_la, _lb].forEach(el => { if (el) { el.style.transition = 'none'; el.style.opacity = '0'; } });
   if (_gt) { _gt.style.transition = 'none'; _gt.style.color = ''; }
+  const logoEl2 = document.getElementById('global-logo');
+  if (logoEl2) logoEl2.style.opacity = '0';
+  const vid2 = document.getElementById('transition-video');
+  if (vid2) { vid2.currentTime = 0; vid2.play().catch(() => {}); }
   if (fadeEl) fadeEl.style.opacity = '1';
-  // Also set gallery to invisible so it fades in, not pops in
   if (galleryEl) galleryEl.style.opacity = '0';
 
-  // ── STEP 2: After 420ms (overlay fully black), reset everything invisibly ──
+  // ── STEP 2: After 500ms (overlay opaque), reset everything invisibly ──
   setTimeout(() => {
 
     // Clear beam from stage
@@ -4596,17 +4648,20 @@ function closeDetailSeamless() {
     card.classList.remove('detail-active');
     galleryEl?.classList.remove('detail-mode');
 
-    // ── STEP 3: Two frames to let DOM settle, then reveal gallery ──
-    requestAnimationFrame(() => {
+    // ── STEP 3 (2500ms stage time): fast fade-out to reveal gallery ──
+    setTimeout(() => {
       requestAnimationFrame(() => {
-        // Fade out the black overlay
-        if (fadeEl) fadeEl.style.opacity = '0';
-        // Fade in the gallery
-        if (galleryEl) galleryEl.style.opacity = '1';
+        requestAnimationFrame(() => {
+          if (fadeEl) fadeEl.style.opacity = '0';
+          if (galleryEl) galleryEl.style.opacity = '1';
+          const _logo = document.getElementById('global-logo');
+          if (_logo) _logo.style.opacity = '0.9';
+          setTimeout(() => { if (vid2) { vid2.pause(); vid2.currentTime = 0; } }, 600);
+        });
       });
-    });
+    }, 2000);
 
-  }, 800);
+  }, 500); // overlay fully opaque — reset content silently
 }
 
 function _closeSeamlessImmediate() {
