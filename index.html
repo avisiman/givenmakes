@@ -2059,17 +2059,19 @@ html, body {
 }
 /* ── Detail Stats Overlay — swipe up inside detail page ── */
 #detail-stats-overlay {
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  height: calc(100dvh - var(--nav));
   background: rgba(242, 240, 233, 0.98);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   transform: translateY(100%);
   transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1);
-  z-index: 500;
+  z-index: 9000;
   pointer-events: none;
   overflow: hidden;
   display: flex;
@@ -2659,28 +2661,32 @@ html, body {
 #gallery-screen.detail-mode {
   z-index: 1500;
   overflow: hidden;
+  pointer-events: none;      /* block all touch on gallery while in detail */
+  touch-action: none;        /* block native scroll/swipe */
+  scroll-snap-type: none;    /* disable snap */
 }
 
 /* The active card darkens and fills the screen */
 .gallery-card.detail-active {
-  background: #000000;
+  background: var(--bg);
   z-index: 1600;
   cursor: default;
   overflow: visible;
   transition: background 0.5s ease, opacity 0.5s ease;
   isolation: isolate;
+  scroll-snap-align: none;
+  pointer-events: auto;
 }
 
 /* detail-dissolve removed — using #fade-overlay instead */
 
-/* Stage: beam as background — stage already covers full card */
+/* Stage: keep light bg in detail — model stays on white */
 .gallery-card.detail-active .gallery-card-stage {
-  background-color: #000000;
-  background-size: cover;
-  background-position: center top;
+  background-color: var(--bg);
+  background-image: none !important; /* disable beam */
   transition: background-color 0.5s ease;
   overflow: visible;
-  padding-bottom: 69%; /* KEEP original — model stays in same vertical position */
+  padding-bottom: 69%; /* KEEP original — model stays in same position */
   justify-content: center;
 }
 
@@ -2716,8 +2722,8 @@ html, body {
   opacity: 1;
   pointer-events: none;
   overflow: visible;
-  /* Push down slightly so content clears the model */
   bottom: calc(var(--nav) + 8%);
+  z-index: 30;   /* above gradient (15) and canvas (10) */
 }
 
 /* Hide category, creator row, location in detail — title stays as anchor */
@@ -2727,16 +2733,20 @@ html, body {
   transition: opacity 0.3s ease;
 }
 
-/* gallery-cat stays visible in detail — same position/size as gallery */
+/* gallery-cat: stays same color as gallery in detail */
 .gallery-card.detail-active .gallery-cat {
-  color: rgba(255,255,255,0.5);
-  transition: color 0.5s ease;
+  color: rgba(255,255,255,0.7) !important;
 }
 
-/* Title: stays exactly in place, colour shifts to white */
 .gallery-card.detail-active .gallery-title {
-  color: rgba(255,255,255,0.92);
-  transition: color 0.5s ease;
+  color: #ffffff !important;
+}
+
+.gallery-card.detail-active .detail-info-meta,
+.gallery-card.detail-active .detail-info-meta span,
+.gallery-card.detail-active .detail-info-meta-dot,
+.gallery-card.detail-active .detail-info-desc {
+  color: rgba(255,255,255,0.8) !important;
 }
 
 /* Detail overlay UI — back button + actions — appears on detail-active */
@@ -2766,7 +2776,7 @@ html, body {
   font-family: 'DM Sans', sans-serif;
   font-size: 13px;
   font-weight: 400;
-  color: rgba(255,255,255,0.6);
+  color: var(--muted);
   cursor: pointer;
   pointer-events: all;
   opacity: 0;
@@ -2781,7 +2791,7 @@ html, body {
 }
 
 .detail-back-float:active {
-  color: rgba(255,255,255,0.95);
+  color: var(--dark);
 }
 
 .detail-overlay-back { display: none; } /* legacy — replaced by detail-back-float */
@@ -2803,18 +2813,40 @@ html, body {
   color: var(--gold);
 }
 
+/* Gradient overlay — cinema poster effect, light version */
+.text-gradient-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(8,15,45,0.0) 0%,
+    rgba(8,15,45,0.15) 30%,
+    rgba(8,15,45,0.6) 65%,
+    rgba(8,15,45,0.95) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.gallery-card.detail-active .text-gradient-overlay {
+  display: block;
+}
+
 /* detail-info-strip: hidden in gallery, flows below title in detail */
 .detail-info-strip {
-  display: none;         /* hidden in gallery — shown only in detail */
+  display: none;
   pointer-events: none;
   margin-top: 10px;
   padding-bottom: 8px;
+  position: relative;
+  z-index: 20;
 }
 
 .gallery-card.detail-active .detail-info-strip {
   display: block;
   pointer-events: all;
 }
+
+/* Scroll elements removed — info flows naturally below title */
 
 /* Layer A: creator / location / year — delay 1.2s */
 .detail-info-layer-a {
@@ -2844,35 +2876,37 @@ html, body {
 /* detail-info-title-sm hidden — title anchor is gallery-title */
 .detail-info-title-sm { display: none; }
 
-/* Layer A: creator · location · year — matches gallery-creator-row scale */
+/* Layer A: creator · location · year */
 .detail-info-meta {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
   font-size: 1.05rem;
-  color: rgba(255,255,255,0.55);
+  color: #000000 !important;
   font-family: 'DM Sans', sans-serif;
-  font-weight: 300;
+  font-weight: 400;
   margin-top: 2px;
   margin-bottom: 6px;
 }
 
 .detail-info-meta-dot {
   font-size: 10px;
-  color: rgba(255,255,255,0.25);
+  color: rgba(0,0,0,0.4) !important;
   flex-shrink: 0;
 }
 
-/* Layer B: description — readable body text */
+/* Layer B: description */
 .detail-info-desc {
   font-family: 'DM Sans', sans-serif;
   font-size: 0.95rem;
-  color: rgba(255,255,255,0.45);
+  color: #000000 !important;
   line-height: 1.65;
   font-weight: 300;
   margin-top: 2px;
 }
+
+
 
 </style>
 </head>
@@ -2882,6 +2916,9 @@ html, body {
 
 <!-- Fullscreen Button -->
 <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen Mode">⛶</button>
+
+<!-- Global Logo -->
+<img id="global-logo" src="https://raw.githubusercontent.com/avisiman/givenmakes-assets/main/assets/logo.png" alt="GivenMakes">
 
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loading-overlay">
@@ -3001,8 +3038,93 @@ html, body {
     </div>
   </div>
 
-  <!-- STATS OVERLAY — swipe up inside detail page -->
-  <div id="detail-stats-overlay">
+  <!-- STATS OVERLAY — moved to global scope (see after #detail-page) -->
+  <div id="detail-stats-overlay-placeholder" style="display:none">
+    <div class="sw-header">
+      <div class="sw-eyebrow">Signal Layer · פריט זה</div>
+      <div class="sw-title" id="dso-title">—</div>
+    </div>
+    <div class="sw-body" id="dso-body">
+
+      <div class="sw-card">
+        <div class="sw-card-label">Aura Score</div>
+        <div class="sw-card-value" id="dso-aura-val">—</div>
+        <div class="sw-card-sub" id="dso-aura-sub">Gravity Score</div>
+        <div class="sw-aura-bar">
+          <div class="sw-aura-fill" id="dso-aura-fill"></div>
+        </div>
+      </div>
+
+      <div class="sw-card decay-card">
+        <div class="sw-decay-ring">
+          <svg viewBox="0 0 64 64" width="64" height="64">
+            <circle class="sw-decay-track" cx="32" cy="32" r="28"/>
+            <circle class="sw-decay-progress" id="dso-decay-circle" cx="32" cy="32" r="28"/>
+          </svg>
+        </div>
+        <div class="sw-card-label">Decay Rate</div>
+        <div class="sw-card-value" id="dso-decay-val">—</div>
+        <div class="sw-card-sub" id="dso-decay-sub">ימים עד ירידת סטטוס</div>
+      </div>
+
+      <div>
+        <div class="sw-card-label" style="color:rgba(255,255,255,0.25); font-size:8px; letter-spacing:2px; margin-bottom:10px;">ATTENTION SIGNALS</div>
+        <div class="sw-signals">
+          <div class="sw-signal">
+            <div class="sw-signal-icon">👁️</div>
+            <div class="sw-signal-num" id="dso-views">—</div>
+            <div class="sw-signal-name">Views</div>
+          </div>
+          <div class="sw-signal">
+            <div class="sw-signal-icon">💾</div>
+            <div class="sw-signal-num" id="dso-saves">—</div>
+            <div class="sw-signal-name">Saves</div>
+          </div>
+          <div class="sw-signal">
+            <div class="sw-signal-icon">⏳</div>
+            <div class="sw-signal-num" id="dso-long">—</div>
+            <div class="sw-signal-name">Long Views</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sw-card">
+        <div class="sw-card-label">Gravity Score — מסלול הישרדות</div>
+        <div class="sw-gs-levels">
+          <div class="sw-gs-row">
+            <div class="sw-gs-label">Raw Entry</div>
+            <div class="sw-gs-bar"><div class="sw-gs-fill dso-gs-fill" style="width:100%"></div></div>
+            <div class="sw-gs-score">0–10</div>
+          </div>
+          <div class="sw-gs-row">
+            <div class="sw-gs-label">Local Feed</div>
+            <div class="sw-gs-bar"><div class="sw-gs-fill dso-gs-fill" style="width:60%"></div></div>
+            <div class="sw-gs-score">10–30</div>
+          </div>
+          <div class="sw-gs-row">
+            <div class="sw-gs-label">Curated</div>
+            <div class="sw-gs-bar"><div class="sw-gs-fill dso-gs-fill" style="width:40%"></div></div>
+            <div class="sw-gs-score">30–60</div>
+          </div>
+          <div class="sw-gs-row">
+            <div class="sw-gs-label">Highlight</div>
+            <div class="sw-gs-bar"><div class="sw-gs-fill dso-gs-fill" style="width:25%"></div></div>
+            <div class="sw-gs-score">60–90</div>
+          </div>
+          <div class="sw-gs-row">
+            <div class="sw-gs-label">Icon ✦</div>
+            <div class="sw-gs-bar"><div class="sw-gs-fill dso-gs-fill" style="width:10%"></div></div>
+            <div class="sw-gs-score">90+</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- dso-body -->
+  </div><!-- placeholder -->
+</div><!-- #detail-page -->
+
+<!-- STATS OVERLAY — global fixed overlay, triggered from seamless detail -->
+<div id="detail-stats-overlay">
     <div class="sw-header">
       <div class="sw-eyebrow">Signal Layer · פריט זה</div>
       <div class="sw-title" id="dso-title">—</div>
@@ -3084,7 +3206,6 @@ html, body {
 
     </div><!-- dso-body -->
   </div><!-- #detail-stats-overlay -->
-</div><!-- #detail-page -->
 
 <!-- Public Profile Page — slides in from left -->
 <div id="public-profile-page">
@@ -4069,6 +4190,7 @@ function initGallery() {
         </div>
         <div class="gallery-floor-shadow"></div>
       </div>
+      <div class="text-gradient-overlay"></div>
       <div class="gallery-card-info">
         <div class="gallery-cat">${item.category}</div>
         <div class="gallery-title">${item.title}</div>
@@ -4096,6 +4218,7 @@ function initGallery() {
         </div>
         <div class="gallery-location">${item.city || item.location || ''}</div>
       </div>
+
       <!-- Floating back button -->
       <button class="detail-back-float" onclick="event.stopPropagation(); closeDetailSeamless()">חזרה</button>
     `;
@@ -4290,13 +4413,20 @@ function openDetailSeamless(itemId) {
   if (!card) { openDetail(itemId); return; }
   if (_seamlessActiveCard && _seamlessActiveCard !== card) _closeSeamlessImmediate();
 
-  _seamlessActiveCard = card;
-  _seamlessItemId     = itemId;
-  _seamlessIsDetail   = true;
-  currentItem         = itemId;
+  const fadeEl = document.getElementById('fade-overlay');
 
-  document.getElementById('gallery-screen').classList.add('detail-mode');
-  card.classList.add('detail-active');
+  // ── STEP 1: Fade to black ──
+  if (fadeEl) fadeEl.style.opacity = '1';
+
+  setTimeout(() => {
+    // ── STEP 2: Open detail behind black screen ──
+    _seamlessActiveCard = card;
+    _seamlessItemId     = itemId;
+    _seamlessIsDetail   = true;
+    currentItem         = itemId;
+
+    document.getElementById('gallery-screen').classList.add('detail-mode');
+    card.classList.add('detail-active');
 
   // Enable OrbitControls on the EXISTING canvas — no new model, no new renderer
   const canvasData = galleryCanvases[itemId];
@@ -4326,35 +4456,51 @@ function openDetailSeamless(itemId) {
     window._detailControls = ctrl;
   }
 
-  // ── DETAIL BACKLIGHT — rim light from upper-left behind object ──
-  if (canvasData) {
-    const backlight = new THREE.SpotLight(0xffffff, 15);
-    backlight.position.set(-5, 8, -6);
-    backlight.target.position.set(0, 0, 0);
-    backlight.angle    = Math.PI / 8;
-    backlight.penumbra = 0.6;
-    backlight.decay    = 1.8;
-    backlight.castShadow = false;
-    backlight.name = '_detailBacklight';
-    canvasData.scene.add(backlight);
-    canvasData.scene.add(backlight.target);
+  // ── Swipe up/down on seamless card → stats overlay ──
+  let _sTouchY = 0, _sDragging = false;
+  function _seamlessSwipeStart(e) { _sTouchY = e.touches[0].clientY; _sDragging = false; }
+  function _seamlessSwipeMove(e)  { if (Math.abs(e.touches[0].clientY - _sTouchY) > 10) _sDragging = true; }
+  function _seamlessSwipeEnd(e) {
+    if (!_sDragging) return;
+    const dy = e.changedTouches[0].clientY - _sTouchY;
+    if (Math.abs(dy) > SWIPE_THRESHOLD) {
+      if (dy < 0 && !detailStatsOpen) openDetailStats();
+      else if (dy > 0 && detailStatsOpen) closeDetailStats();
+    }
+    _sDragging = false;
   }
+  card._seamlessSwipeStart = _seamlessSwipeStart;
+  card._seamlessSwipeMove  = _seamlessSwipeMove;
+  card._seamlessSwipeEnd   = _seamlessSwipeEnd;
+  card.addEventListener('touchstart', _seamlessSwipeStart, { passive: true });
+  card.addEventListener('touchmove',  _seamlessSwipeMove,  { passive: true });
+  card.addEventListener('touchend',   _seamlessSwipeEnd,   { passive: true });
+
+  // Backlight disabled — gallery lighting preserved in detail
 
   // ── BEAM on stage background — wrap stays in place, no renderer resize ──
   if (canvasData) {
-    const stage = _seamlessActiveCard.querySelector('.gallery-card-stage');
-    const beamUrl = 'https://raw.githubusercontent.com/avisiman/givenmakes-assets/main/assets/beam.jpg';
-    if (stage) stage.style.backgroundImage = `url('${beamUrl}')`;
+    // Beam disabled — light bg aesthetic
+    // const stage = _seamlessActiveCard.querySelector('.gallery-card-stage');
+    // if (stage) stage.style.backgroundImage = url(beam.jpg);
     // NO renderer resize — canvas stays its original square size
     // NO camera changes — model appears exactly as in gallery
     canvasData._detailExpanded = true;
   }
 
-  // Save gallery scroll position for restore on close
-  const _galleryEl = document.getElementById('gallery-screen');
-  if (canvasData && _galleryEl) canvasData._savedScrollLeft = _galleryEl.scrollLeft;
+    // Save gallery scroll position for restore on close
+    const _galleryEl = document.getElementById('gallery-screen');
+    if (canvasData && _galleryEl) canvasData._savedScrollLeft = _galleryEl.scrollLeft;
 
-  history.pushState({ gm: 'active' }, '');
+    // ── STEP 3: Fade back in to reveal detail ──
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (fadeEl) fadeEl.style.opacity = '0';
+      });
+    });
+
+    history.pushState({ gm: 'active' }, '');
+  }, 800); // wait for fade-overlay transition (0.8s)
 }
 
 function closeDetailSeamless() {
@@ -4394,6 +4540,15 @@ function closeDetailSeamless() {
         canvasData.scene.remove(bl);
       }
     }
+
+    // Remove swipe handlers + close stats
+    if (card._seamlessSwipeStart) {
+      card.removeEventListener('touchstart', card._seamlessSwipeStart);
+      card.removeEventListener('touchmove',  card._seamlessSwipeMove);
+      card.removeEventListener('touchend',   card._seamlessSwipeEnd);
+      card._seamlessSwipeStart = card._seamlessSwipeMove = card._seamlessSwipeEnd = null;
+    }
+    if (detailStatsOpen) closeDetailStats();
 
     // Dispose OrbitControls
     if (_seamlessControls) {
@@ -5719,6 +5874,14 @@ function openDetailStats() {
   if (detailStatsLocked || detailStatsOpen) return;
   detailStatsLocked = true;
   detailStatsOpen = true;
+  // Feed current item data
+  const item = ITEMS.find(i => i.id === (_seamlessItemId || currentItem));
+  if (item) {
+    const t = document.getElementById('dso-title');
+    if (t) t.textContent = item.title || '—';
+    const a = document.getElementById('dso-aura-val');
+    if (a) a.textContent = item.gravityScore || '—';
+  }
   document.getElementById('detail-stats-overlay').classList.add('open');
   updateDetailStats();
 
@@ -5733,6 +5896,20 @@ function closeDetailStats() {
 
   setTimeout(() => { detailStatsLocked = false; }, 600);
 }
+
+// Swipe down on stats overlay itself → close
+(function() {
+  const overlay = document.getElementById('detail-stats-overlay');
+  let _ty = 0, _td = false;
+  overlay.addEventListener('touchstart', e => { _ty = e.touches[0].clientY; _td = false; }, { passive: true });
+  overlay.addEventListener('touchmove',  e => { if (Math.abs(e.touches[0].clientY - _ty) > 10) _td = true; }, { passive: true });
+  overlay.addEventListener('touchend',   e => {
+    if (!_td) return;
+    const dy = e.changedTouches[0].clientY - _ty;
+    if (dy > SWIPE_THRESHOLD) closeDetailStats();
+    _td = false;
+  }, { passive: true });
+})();
 
 function updateDetailStats() {
   const item = ITEMS.find(i => i.id === currentItem) || ITEMS[0];
