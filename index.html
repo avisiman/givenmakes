@@ -126,22 +126,61 @@ html, body {
 /* ═══════════════════════════════════════════════════════════════════
    GALLERY FEED - CSS SCROLL SNAP (NATIVE FEEL)
    ═══════════════════════════════════════════════════════════════════ */
-#gallery-screen {
+#gallery-screen,
+#city-gallery-screen {
   display: block;
   width: 100%;
   height: 100%;
   overflow-x: scroll;
-  overflow-y: hidden; /* No vertical scroll */
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   transition: opacity 1.2s ease-out;
 }
 
-#gallery-screen::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
+#gallery-screen::-webkit-scrollbar,
+#city-gallery-screen::-webkit-scrollbar {
+  display: none;
+}
+
+/* City gallery — positioned above city page */
+#city-gallery-screen {
+  position: absolute;
+  inset: 0;
+  bottom: var(--nav);
+  background: var(--bg);
+  z-index: 2100;
+  transform: translateX(100%);
+  transition: transform 0.45s cubic-bezier(0.77, 0, 0.175, 1);
+  overflow-x: scroll;
+}
+
+#city-gallery-screen.open {
+  transform: translateX(0);
+}
+
+/* Back button for city gallery */
+#city-gallery-back {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 2200;
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--muted);
+  cursor: pointer;
+  display: none;
+  padding: 6px 0;
+}
+
+#city-gallery-screen.open ~ #city-gallery-back,
+#city-gallery-back.visible {
+  display: block;
 }
 
 .gallery-track {
@@ -3500,6 +3539,12 @@ body.detail-view-active #app-container {
   </div>
 </div>
 
+<!-- City Gallery Screen — slides over city page -->
+<div id="city-gallery-screen">
+  <div class="gallery-track" id="city-gallery-track"></div>
+</div>
+<button id="city-gallery-back" onclick="closeCityGallery()">← עיר</button>
+
 <!-- City Page — slides in from right -->
 <div id="city-page">
   <div class="city-header">
@@ -5740,15 +5785,21 @@ function renderStudio() {
   const list = document.getElementById('studio-hold-list');
   if (!list) return;
 
+  // Include gallery items matching current user
+  const myName = document.getElementById('studio-user-name')?.textContent || '';
+  const myGalleryItems = ITEMS.filter(i =>
+    myName && (i.creatorName || i.creator || '') === myName
+  );
+
   const pending = USER_ITEMS.filter(i => i.status === 'pending');
-  const live = USER_ITEMS.filter(i => i.status === 'live');
+  const live    = [...USER_ITEMS.filter(i => i.status === 'live'), ...myGalleryItems];
 
   // Update counters
   document.getElementById('studio-count-pending').textContent = pending.length;
-  document.getElementById('studio-count-live').textContent = live.length;
-  document.getElementById('studio-count-total').textContent = USER_ITEMS.length;
+  document.getElementById('studio-count-live').textContent = myGalleryItems.length;
+  document.getElementById('studio-count-total').textContent = USER_ITEMS.length + myGalleryItems.length;
 
-  if (USER_ITEMS.length === 0) {
+  if (USER_ITEMS.length === 0 && myGalleryItems.length === 0) {
     list.innerHTML = `
       <div class="studio-empty">
         <div class="studio-empty-icon">⬡</div>
@@ -5756,6 +5807,24 @@ function renderStudio() {
       </div>
     `;
     return;
+  }
+
+  // Show live gallery items
+  if (myGalleryItems.length > 0) {
+    const liveHtml = myGalleryItems.map(item => `
+      <div class="studio-hold-card" onclick="openDetailSeamless(${item.id})">
+        <div class="studio-hold-thumb-emoji">${item.emoji || '📦'}</div>
+        <div class="studio-hold-info">
+          <div class="studio-hold-title">${item.title}</div>
+          <div class="studio-hold-status">
+            <div class="studio-hold-dot"></div>
+            בגלריה ✦
+          </div>
+        </div>
+      </div>
+    `).join('');
+    list.innerHTML = liveHtml;
+    if (USER_ITEMS.length === 0) return;
   }
 
   let html = '';
@@ -6526,6 +6595,115 @@ function closePublicProfile() {
 }
 
 // ── City Page ──
+// ── City Gallery ──
+let _cityGalleryItems = [];
+let _cityGalleryCanvases = {};
+
+function openCityGallery(cityName, startItemId) {
+  const screen = document.getElementById('city-gallery-screen');
+  const track  = document.getElementById('city-gallery-track');
+  const backBtn = document.getElementById('city-gallery-back');
+
+  // Filter items
+  _cityGalleryItems = ITEMS.filter(i =>
+    (i.city || i.location || '').includes(cityName)
+  );
+  if (!_cityGalleryItems.length) return;
+
+  // Build cards (reuse same HTML structure as main gallery)
+  track.innerHTML = '';
+  _cityGalleryCanvases = {};
+
+  _cityGalleryItems.forEach((item, index) => {
+    const card = document.createElement('div');
+    card.className = 'gallery-card';
+    card.dataset.index = index;
+    card.dataset.itemId = item.id;
+    card.innerHTML = `
+      <div class="gallery-card-stage">
+        <div class="gallery-obj-wrap" id="city-canvas-wrap-${item.id}">
+          <canvas id="city-canvas-${item.id}"></canvas>
+        </div>
+        <div class="gallery-floor-shadow"></div>
+      </div>
+      <div class="text-gradient-overlay"></div>
+      <div class="gallery-card-info">
+        <div class="gallery-cat">${item.category}</div>
+        <div class="gallery-title">${item.title}</div>
+        <div class="detail-info-strip">
+          <div class="detail-info-layer-a">
+            <div class="detail-info-meta">
+              <span>${item.creatorName || item.creator || ''}</span>
+              ${item.year ? `<span class="detail-info-meta-dot">·</span><span>${item.year}</span>` : ''}
+            </div>
+          </div>
+          ${item.description ? `<div class="detail-info-layer-b"><div class="detail-info-desc">${item.description.slice(0,127)}${item.description.length>130?'…':''}</div></div>` : ''}
+        </div>
+        <div class="gallery-creator-row">
+          <span class="gallery-creator-link">${item.creatorName || item.creator}</span>
+          <span class="gallery-creator-sep">·</span>
+          <span class="gallery-year">${item.year || ''}</span>
+        </div>
+        <div class="gallery-location">${item.city || item.location || ''}</div>
+      </div>
+      <button class="detail-back-float" onclick="event.stopPropagation(); closeCityGallery()">← עיר</button>
+    `;
+    track.appendChild(card);
+
+    // Init Three.js
+    setTimeout(() => {
+      const canvas = document.getElementById('city-canvas-' + item.id);
+      if (!canvas) return;
+      _initCityCard(item, canvas, card);
+    }, 80 + index * 50);
+  });
+
+  // Show
+  screen.classList.add('open');
+  if (backBtn) backBtn.classList.add('visible');
+
+  // Scroll to target item
+  const targetIdx = _cityGalleryItems.findIndex(i => i.id === startItemId);
+  if (targetIdx > 0) {
+    setTimeout(() => {
+      screen.scrollLeft = targetIdx * screen.offsetWidth;
+    }, 100);
+  }
+}
+
+function _initCityCard(item, canvas, card) {
+  // Minimal Three.js init — same as main gallery
+  const existingData = galleryCanvases[item.id];
+  if (existingData) {
+    // Reuse renderer snapshot — just clone scene visually
+  }
+  // Use the existing initGalleryCard logic by temporarily mapping
+  const wrap = document.getElementById('city-canvas-wrap-' + item.id);
+  if (!wrap) return;
+
+  // Point card click to openDetailSeamless on main gallery
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('.detail-back-float')) return;
+    if (e.target.closest('.gallery-creator-link')) return;
+    openDetailFromCityGallery(item.id);
+  });
+}
+
+function openDetailFromCityGallery(itemId) {
+  // Find card in MAIN gallery and open seamless on it
+  const mainCard = document.querySelector(`#gallery-track .gallery-card[data-item-id="${itemId}"]`);
+  if (mainCard) {
+    openDetailSeamless(itemId);
+  }
+}
+
+function closeCityGallery() {
+  const screen = document.getElementById('city-gallery-screen');
+  const backBtn = document.getElementById('city-gallery-back');
+  screen.classList.remove('open');
+  if (backBtn) backBtn.classList.remove('visible');
+}
+
 function openCityPage(cityName) {
   const fadeEl = document.getElementById('fade-overlay');
   const logoEl = document.getElementById('global-logo');
@@ -6638,7 +6816,8 @@ function _cityItemCard(item) {
   const inner = imgUrl
     ? '<img class="city-item-img" src="' + imgUrl + '" alt="' + item.title + '" loading="lazy">'
     : '<div class="city-item-emoji-fallback">' + (item.emoji || '📦') + '</div>';
-  return '<div class="city-item-card" onclick="openDetail(' + item.id + '); closeCityPage();">' + inner + '</div>';
+  const cityName = (document.getElementById('city-page-name')?.textContent || '').replace(/'/g, "");
+  return '<div class="city-item-card" onclick="openCityGallery(\'' + cityName + '\',' + item.id + ')">' + inner + '</div>';
 }
 
 function switchCityTab(tab) {
