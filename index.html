@@ -2516,16 +2516,16 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   PUBLIC PROFILE PAGE — curator view (light, gallery-style)
+   PUBLIC PROFILE PAGE — cinematic dark hero + light body
    ═══════════════════════════════════════════════════════════════════ */
 
 #public-profile-page {
   position: absolute;
   inset: 0;
   bottom: var(--nav);
-  background: #FFFFFF;
-  transform: translateX(-100%);
-  transition: transform 0.45s cubic-bezier(0.77, 0, 0.175, 1);
+  background: var(--bg);
+  transform: translateX(100%);       /* slides in from RIGHT */
+  transition: transform 0.48s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 2000;
   display: flex;
   flex-direction: column;
@@ -2535,6 +2535,373 @@ html, body {
 #public-profile-page.open {
   transform: translateX(0);
 }
+
+/* ── Profile Hero (dark, cinematic) ── */
+.pp-hero-dark {
+  position: relative;
+  background: #111009;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.pp-hero-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.pp-hero-atmosphere::before {
+  content: '';
+  position: absolute;
+  width: 260px; height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(140,126,108,0.2) 0%, transparent 70%);
+  top: -70px; right: -50px;
+  filter: blur(36px);
+}
+.pp-hero-atmosphere::after {
+  content: '';
+  position: absolute;
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(140,126,108,0.1) 0%, transparent 70%);
+  bottom: -30px; left: 16px;
+  filter: blur(28px);
+}
+.pp-hero-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Top bar inside hero */
+.pp-topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+}
+.pp-back-new {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: rgba(248,247,244,0.6);
+  font-weight: 400;
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  transition: color 0.2s;
+  padding: 4px 0;
+}
+.pp-back-new:active { color: rgba(248,247,244,0.9); }
+
+/* Edit button — only visible to self */
+.pp-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 15px;
+  border-radius: 20px;
+  background: rgba(140,126,108,0.12);
+  border: 1px solid rgba(140,126,108,0.28);
+  color: var(--gold-dim);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.pp-edit-btn:active {
+  background: rgba(140,126,108,0.22);
+  border-color: rgba(140,126,108,0.45);
+}
+.pp-edit-btn.hidden { display: none; }
+
+/* Identity block */
+.pp-identity {
+  position: relative;
+  z-index: 2;
+  padding: 0 22px 24px;
+}
+.pp-avatar-wrap {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+.pp-avatar-ring {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(140,126,108,0.3) 0%, rgba(140,126,108,0.1) 100%);
+  border: 2px solid rgba(140,126,108,0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+  overflow: hidden;
+}
+.pp-avatar-ring img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+.pp-verified-badge {
+  position: absolute;
+  bottom: 2px; left: 2px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #A09080, #8C7E6C);
+  border: 2px solid #111009;
+  display: flex; align-items: center; justify-content: center;
+}
+.pp-verified-badge svg {
+  fill: none; stroke: white;
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  width: 9px; height: 9px;
+}
+
+.pp-name-new {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: rgba(248,247,244,0.95);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin-bottom: 4px;
+  text-align: right;
+}
+.pp-handle-new {
+  font-size: 12px;
+  color: rgba(248,247,244,0.35);
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+  text-align: right;
+}
+.pp-bio-new {
+  font-size: 13px;
+  line-height: 1.65;
+  color: rgba(248,247,244,0.55);
+  font-weight: 300;
+  margin-bottom: 18px;
+  font-style: italic;
+  text-align: right;
+  direction: rtl;
+}
+
+/* Gravity Score card */
+.pp-gravity-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(140,126,108,0.08);
+  border: 1px solid rgba(140,126,108,0.2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  position: relative;
+  overflow: hidden;
+  direction: rtl;
+}
+.pp-gravity-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(140,126,108,0.35), transparent);
+}
+.pp-gravity-orb {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: rgba(140,126,108,0.12);
+  border: 1px solid rgba(140,126,108,0.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.pp-gravity-score {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gold-dim);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.pp-gravity-lbl {
+  font-size: 9px;
+  color: rgba(248,247,244,0.28);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 3px;
+  font-weight: 400;
+}
+.pp-gravity-pct {
+  margin-right: auto;
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+/* Profile tabs strip */
+.pp-tabs-strip {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  background: rgba(10,9,6,0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.pp-tab-new {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: rgba(248,247,244,0.3);
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+}
+.pp-tab-new.active { color: var(--gold-dim); }
+.pp-tab-new.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  border-radius: 1px;
+}
+
+/* Scrollable body */
+.pp-body-new {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg);
+}
+.pp-body-new::-webkit-scrollbar { display: none; }
+
+/* Works grid */
+.pp-grid-new {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px 2px 40px;
+}
+.pp-grid-cell {
+  position: relative;
+  aspect-ratio: 1 / 1.05;
+  background: rgba(42,42,42,0.06);
+  cursor: pointer;
+  overflow: hidden;
+  transition: opacity 0.2s;
+}
+.pp-grid-cell:active { opacity: 0.78; }
+.pp-grid-cell-emoji {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 52px;
+  background: linear-gradient(145deg, rgba(242,240,233,0.6) 0%, rgba(232,229,218,1) 100%);
+  transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+}
+.pp-grid-cell:hover .pp-grid-cell-emoji { transform: scale(1.06); }
+.pp-grid-cell-chip {
+  position: absolute;
+  top: 8px; right: 8px;
+  padding: 3px 8px;
+  background: rgba(42,42,42,0.5);
+  backdrop-filter: blur(4px);
+  border-radius: 14px;
+  font-size: 9px;
+  color: rgba(242,240,233,0.65);
+  letter-spacing: 0.06em;
+}
+.pp-grid-cell-overlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 18px 10px 10px;
+  background: linear-gradient(to top, rgba(42,42,42,0.75) 0%, transparent 100%);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.22s, transform 0.22s;
+}
+.pp-grid-cell:hover .pp-grid-cell-overlay,
+.pp-grid-cell:active .pp-grid-cell-overlay { opacity: 1; transform: translateY(0); }
+.pp-grid-cell-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(248,247,244,0.95);
+  text-align: right;
+  direction: rtl;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+.pp-grid-cell-score {
+  font-size: 10px;
+  color: var(--gold-dim);
+  text-align: right;
+}
+
+/* About panel (bio tab) */
+.pp-about-body {
+  padding: 24px 22px 60px;
+  direction: rtl;
+}
+.pp-about-eyebrow {
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.pp-about-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text);
+  font-weight: 300;
+  font-style: italic;
+  margin-bottom: 28px;
+}
+.pp-about-gravity-big {
+  font-family: 'Inter', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.04em;
+  margin-bottom: 6px;
+}
+.pp-about-gravity-sub {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* Empty state */
+.pp-empty {
+  padding: 56px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+  direction: rtl;
+}
+
+/* ── Keep old pp-back for backward compatibility ── */
+.pp-header { display: none; }
+.pp-back   { display: none; }
+.pp-hero   { display: none; }
 
 /* ── City Page — slides in from right ── */
 #city-page {
@@ -3528,15 +3895,55 @@ body.detail-view-active #app-container {
     </div><!-- dso-body -->
   </div><!-- #detail-stats-overlay -->
 
-<!-- Public Profile Page — slides in from left -->
+<!-- Public Profile Page — slides in from RIGHT -->
 <div id="public-profile-page">
-  <div class="pp-header">
-    <button class="pp-back" onclick="closePublicProfile()">← חזרה</button>
-    <div style="font-size:11px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase;">פרופיל</div>
+
+  <!-- Dark hero section -->
+  <div class="pp-hero-dark">
+    <div class="pp-hero-atmosphere"></div>
+    <div class="pp-hero-grain"></div>
+
+    <!-- Top bar: back + edit -->
+    <div class="pp-topbar">
+      <button class="pp-back-new" onclick="closePublicProfile()">← חזרה</button>
+      <button class="pp-edit-btn hidden" id="pp-edit-btn" onclick="closePublicProfile(); openStudioWorld();">
+        ✦ ערוך פרופיל
+      </button>
+    </div>
+
+    <!-- Identity -->
+    <div class="pp-identity">
+      <div class="pp-avatar-wrap">
+        <div class="pp-avatar-ring" id="pp-avatar-ring">✦</div>
+        <div class="pp-verified-badge">
+          <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+        </div>
+      </div>
+      <div class="pp-name-new" id="pp-name-new"></div>
+      <div class="pp-handle-new" id="pp-handle-new"></div>
+      <div class="pp-bio-new" id="pp-bio-new"></div>
+      <div class="pp-gravity-card">
+        <div class="pp-gravity-orb">✦</div>
+        <div>
+          <div class="pp-gravity-score" id="pp-gravity-score">—</div>
+          <div class="pp-gravity-lbl">Gravity Score</div>
+        </div>
+        <div class="pp-gravity-pct" id="pp-gravity-pct"></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="pp-tabs-strip">
+      <button class="pp-tab-new active" onclick="switchPPTab('works', this)">יצירות</button>
+      <button class="pp-tab-new" onclick="switchPPTab('about', this)">על האמן</button>
+    </div>
   </div>
-  <div class="pp-body" id="pp-body">
-    <!-- Populated by openPublicProfile(creatorName) -->
+
+  <!-- Scrollable body -->
+  <div class="pp-body-new" id="pp-body-new">
+    <!-- Populated by openPublicProfile() -->
   </div>
+
 </div>
 
 <!-- City Gallery Screen — slides over city page -->
@@ -4560,7 +4967,7 @@ function initGallery() {
           <!-- Layer A: creator / location / year (delay 1.2s) -->
           <div class="detail-info-layer-a">
             <div class="detail-info-meta">
-              <span>${item.creatorName || item.creator || ''}</span>
+              <span class="detail-creator-profile-link" onclick="event.stopPropagation(); openPublicProfile('${item.creatorName || item.creator}')" style="cursor:pointer; border-bottom:1px solid rgba(0,0,0,0.25); padding-bottom:1px;">${item.creatorName || item.creator || ''}</span>
               ${(item.city || item.location) ? `<span class="detail-info-meta-dot">·</span><span class="detail-city-link" onclick="event.stopPropagation(); openCityPage('${item.city || item.location}')" style="cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.3);padding-bottom:1px;">${item.city || item.location}</span>` : ''}
               ${item.year ? `<span class="detail-info-meta-dot">·</span><span>${item.year}</span>` : ''}
             </div>
@@ -6528,6 +6935,19 @@ function editStudioProfile() {
 
 // ── Public Profile ──
 
+// ARTISTS_DB — extended data per creator handle / name
+const CREATORS_DB = {
+  'אבי סימן-טוב': {
+    name: 'אבי סימן-טוב',
+    handle: '@avisiman',
+    bio: 'מחיה חפצים שנמצאו ונזרקו. כל פריט מקבל עוד חיים אחד.',
+    emoji: '🎨',
+    gravityScore: 847,
+    percentileLabel: 'טופ 12%',
+    isSelf: true
+  }
+};
+
 // Creator data lookup (falls back to gallery items)
 function getCreatorData(creatorName) {
   const items = ITEMS.filter(i =>
@@ -6535,63 +6955,125 @@ function getCreatorData(creatorName) {
   );
 
   // Check if this is "me" (current user)
-  const myName = document.getElementById('studio-user-name')?.textContent;
+  const myName = document.getElementById('studio-user-name')?.textContent?.trim();
   const isMe = creatorName === myName;
+
+  // Extended data from DB, if present
+  const extended = CREATORS_DB[creatorName] || {};
 
   return {
     name: creatorName,
+    handle: extended.handle || '',
+    bio: extended.bio || items[0]?.bio || 'אוצר ויוצר עצמאי. מחפש יופי בחפצים שנשכחו.',
+    emoji: extended.emoji || creatorName.charAt(0),
+    gravityScore: extended.gravityScore || Math.max(...items.map(i => i.gravityScore || 0), 30),
+    percentileLabel: extended.percentileLabel || '',
     isMe,
-    bio: items[0]?.bio || 'אוצר ויוצר עצמאי. מחפש יופי בחפצים שנשכחו.',
-    influence: Math.floor(Math.random() * 150) + 30,
     items
   };
 }
 
+// Track current profile creator for tab switching
+let _currentProfileCreator = null;
+
 function openPublicProfile(creatorName) {
   const data = getCreatorData(creatorName);
+  _currentProfileCreator = creatorName;
 
-  // If tapping own name → open Studio instead
+  // If tapping own name → show own profile WITH edit button
+  // (no longer redirects to Studio — user sees public view + edit btn)
+
+  // Populate hero
+  document.getElementById('pp-avatar-ring').textContent = data.emoji;
+  document.getElementById('pp-name-new').textContent = data.name;
+  document.getElementById('pp-handle-new').textContent = data.handle || '';
+  document.getElementById('pp-bio-new').textContent = data.bio;
+  document.getElementById('pp-gravity-score').textContent = data.gravityScore.toLocaleString();
+  document.getElementById('pp-gravity-pct').textContent = data.percentileLabel;
+
+  // Edit button — only for self
+  const editBtn = document.getElementById('pp-edit-btn');
   if (data.isMe) {
-    openStudioWorld();
-    return;
+    editBtn.classList.remove('hidden');
+  } else {
+    editBtn.classList.add('hidden');
   }
 
-  const body = document.getElementById('pp-body');
-  body.innerHTML = `
-    <div class="pp-hero">
-      <div class="pp-avatar">${creatorName.charAt(0)}</div>
-      <div class="pp-name">${creatorName}</div>
-      <div class="pp-bio">${data.bio}</div>
-      <div class="pp-influence">
-        <div class="pp-influence-score">${data.influence}</div>
-        <div class="pp-influence-label">Influence Score</div>
-      </div>
-    </div>
+  // Reset to works tab
+  document.querySelectorAll('.pp-tab-new').forEach((t, i) => {
+    t.classList.toggle('active', i === 0);
+  });
 
-    ${data.items.length > 0 ? `
-      <div class="pp-section-label">יצירות</div>
-      <div class="pp-grid">
-        ${data.items.map(item => `
-          <div class="pp-grid-item" onclick="openDetail(${item.id}); closePublicProfile();">
-            <div class="pp-grid-emoji">${item.emoji}</div>
-            <div class="pp-grid-title">${item.title}</div>
-            <div class="pp-grid-cat">${item.category}</div>
-          </div>
-        `).join('')}
-      </div>
-    ` : `
-      <div class="pp-section-label" style="padding-top:40px; text-align:center; color:var(--muted); font-size:12px;">
-        אין פריטים עדיין בגלריה
-      </div>
-    `}
-  `;
+  // Build works grid
+  _buildPPWorksGrid(data.items);
 
   document.getElementById('public-profile-page').classList.add('open');
   history.pushState({ gm: 'active' }, '');
 }
 
+function _buildPPWorksGrid(items) {
+  const body = document.getElementById('pp-body-new');
+
+  if (!items || items.length === 0) {
+    body.innerHTML = '<div class="pp-empty">אין יצירות עדיין ✦</div>';
+    return;
+  }
+
+  const cells = items.map(item => `
+    <div class="pp-grid-cell" onclick="_ppOpenItem(${item.id})">
+      <div class="pp-grid-cell-emoji">${item.emoji || '📦'}</div>
+      <div class="pp-grid-cell-chip">${item.category || ''}</div>
+      <div class="pp-grid-cell-overlay">
+        <div class="pp-grid-cell-title">${item.title}</div>
+        <div class="pp-grid-cell-score">✦ ${(item.gravityScore || 0).toLocaleString()}</div>
+      </div>
+    </div>
+  `).join('');
+
+  body.innerHTML = `<div class="pp-grid-new">${cells}</div>`;
+}
+
+function _ppOpenItem(itemId) {
+  closePublicProfile();
+  // Scroll to item in main gallery, then open detail
+  const galleryEl = document.getElementById('gallery-screen');
+  const idx = ITEMS.findIndex(i => i.id === itemId);
+  if (idx >= 0 && galleryEl) {
+    galleryEl.style.scrollBehavior = 'auto';
+    galleryEl.scrollLeft = idx * galleryEl.offsetWidth;
+    galleryEl.style.scrollBehavior = '';
+    currentCardIndex = idx;
+  }
+  setTimeout(() => openDetailSeamless(itemId), 300);
+}
+
+function switchPPTab(tab, btn) {
+  document.querySelectorAll('.pp-tab-new').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const data = getCreatorData(_currentProfileCreator || '');
+  const body = document.getElementById('pp-body-new');
+
+  if (tab === 'works') {
+    _buildPPWorksGrid(data.items);
+  } else if (tab === 'about') {
+    body.innerHTML = `
+      <div class="pp-about-body">
+        <div class="pp-about-eyebrow">על האמן</div>
+        <div class="pp-about-text">${data.bio}</div>
+        <div style="border-top:1px solid var(--border); padding-top:22px; margin-top:4px;">
+          <div class="pp-about-eyebrow">Gravity Score</div>
+          <div class="pp-about-gravity-big">${data.gravityScore.toLocaleString()}</div>
+          <div class="pp-about-gravity-sub">מדד ה-Gravity מחושב לפי אינטראקציות, שמירות ומשך צפייה.<br>ככל שהמספר גבוה יותר, כך ליצירות יש יותר כוח משיכה.</div>
+        </div>
+      </div>
+    `;
+  }
+}
+
 function closePublicProfile() {
   document.getElementById('public-profile-page').classList.remove('open');
+  _currentProfileCreator = null;
 }
 
 // ── City Page ──
@@ -6741,7 +7223,7 @@ function openCityPage(cityName) {
         <div class="city-artist-row" onclick="openPublicProfile('${name}'); closeCityPage();">
           <div class="city-artist-avatar">${name.charAt(0)}</div>
           <div class="city-artist-info">
-            <div class="city-artist-name">${name}</div>
+            <div class="city-artist-name" style="color:var(--accent); cursor:pointer;">${name}</div>
             <div class="city-artist-count">${count} פריט${count !== 1 ? 'ים' : ''}</div>
           </div>
         </div>
