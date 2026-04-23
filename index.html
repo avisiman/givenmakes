@@ -2497,6 +2497,234 @@ html, body {
   transform: translateX(0);
 }
 
+/* ── City Page — slides in from right ── */
+#city-page {
+  position: absolute;
+  inset: 0;
+  bottom: var(--nav);
+  background: var(--bg);
+  transform: translateX(100%);
+  transition: transform 0.45s cubic-bezier(0.77, 0, 0.175, 1);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#city-page.open {
+  transform: translateX(0);
+}
+
+.city-header {
+  flex-shrink: 0;
+  padding: 14px 18px 0;
+  background: rgba(248,247,244,0.97);
+  backdrop-filter: blur(12px);
+  direction: rtl;
+}
+
+.city-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.city-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--dark);
+  font-weight: 500;
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.city-name {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dark);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.city-tabs {
+  display: flex;
+  direction: rtl;
+  margin-top: 0;
+}
+
+.city-tab {
+  flex: 1;
+  padding: 12px 8px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: center;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+
+.city-tab.active {
+  color: var(--dark);
+  border-bottom-color: var(--dark);
+}
+
+.city-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.city-panel {
+  display: none;
+  padding: 16px;
+  direction: rtl;
+}
+
+.city-panel.active {
+  display: block;
+}
+
+/* Items grid */
+.city-items-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+}
+
+.city-item-card {
+  background: #fff;
+  aspect-ratio: 1;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  overflow: hidden;
+  position: relative;
+}
+
+.city-item-card:active { opacity: 0.75; }
+
+.city-item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.city-item-emoji-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  background: var(--bg);
+}
+
+/* Artists list */
+.city-category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  direction: rtl;
+}
+
+.city-category-row:last-child { border-bottom: none; }
+.city-category-row:active { opacity: 0.7; }
+
+.city-category-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.city-category-count {
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.city-category-arrow {
+  font-size: 12px;
+  color: var(--border);
+}
+
+.city-artist-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  direction: rtl;
+}
+
+.city-artist-row:last-child { border-bottom: none; }
+.city-artist-row:active { opacity: 0.7; }
+
+.city-artist-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.city-artist-info { flex: 1; min-width: 0; }
+
+.city-artist-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--dark);
+  margin-bottom: 2px;
+}
+
+.city-artist-count {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Collections placeholder */
+.city-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.city-empty-icon {
+  font-size: 36px;
+  margin-bottom: 12px;
+  opacity: 0.4;
+}
+
 .pp-header {
   flex-shrink: 0;
   padding: 14px 18px 12px;
@@ -2661,14 +2889,15 @@ html, body {
 #gallery-screen.detail-mode {
   z-index: 1500;
   overflow: hidden;
-  pointer-events: none;      /* block all touch on gallery while in detail */
-  touch-action: none;        /* block native scroll/swipe */
-  scroll-snap-type: none;    /* disable snap */
+  pointer-events: none;
+  touch-action: none;
+  scroll-snap-type: none;
+  background: #0d1117;       /* dark bg visible behind card */
 }
 
 /* The active card darkens and fills the screen */
 .gallery-card.detail-active {
-  background: var(--bg);
+  background: #0d1117;
   z-index: 1600;
   cursor: default;
   overflow: visible;
@@ -2676,18 +2905,26 @@ html, body {
   isolation: isolate;
   scroll-snap-align: none;
   pointer-events: auto;
+  /* Cover full viewport — no light gaps */
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* detail-dissolve removed — using #fade-overlay instead */
 
 /* Stage: keep light bg in detail — model stays on white */
 .gallery-card.detail-active .gallery-card-stage {
-  background-color: var(--bg);
-  background-image: none !important; /* disable beam */
+  background-color: #0d1117;
+  background-image: none !important;
   transition: background-color 0.5s ease;
   overflow: visible;
-  padding-bottom: 69%; /* KEEP original — model stays in same position */
+  padding-bottom: 69%;
   justify-content: center;
+  /* Extend upward to cover any gap above stage */
+  margin-top: -20px;
+  padding-top: 20px;
 }
 
 /* Kill the white bottom fade in detail mode */
@@ -2835,10 +3072,10 @@ html, body {
   position: absolute;
   inset: 0;
   background: linear-gradient(to bottom,
-    rgba(8,15,45,0.0) 0%,
-    rgba(8,15,45,0.15) 30%,
-    rgba(8,15,45,0.6) 65%,
-    rgba(8,15,45,0.95) 100%);
+    rgba(25,25,112,0.92) 0%,
+    rgba(25,25,112,0.88) 40%,
+    rgba(15,15,70,0.92) 70%,
+    #060D0D 100%);
   pointer-events: none;
   z-index: 1;
 }
@@ -2937,6 +3174,12 @@ html, body {
   opacity: 0.9;
   display: block;
   transition: opacity 0.8s ease-in-out;
+}
+
+/* ── Detail view: dark root ── */
+body.detail-view-active,
+body.detail-view-active #app-container {
+  background-color: #060D0D !important;
 }
 
 </style>
@@ -3254,6 +3497,39 @@ html, body {
   </div>
   <div class="pp-body" id="pp-body">
     <!-- Populated by openPublicProfile(creatorName) -->
+  </div>
+</div>
+
+<!-- City Page — slides in from right -->
+<div id="city-page">
+  <div class="city-header">
+    <div class="city-header-top">
+      <button class="city-back" onclick="closeCityPage()">← חזרה</button>
+      <div class="city-name" id="city-page-name">תל אביב</div>
+    </div>
+    <div class="city-tabs">
+      <button class="city-tab active" onclick="switchCityTab('items')">כל הפריטים</button>
+      <button class="city-tab" onclick="switchCityTab('categories')">קטגוריות</button>
+      <button class="city-tab" onclick="switchCityTab('collections')">אוספים</button>
+      <button class="city-tab" onclick="switchCityTab('artists')">אמנים</button>
+    </div>
+  </div>
+  <div class="city-body">
+    <div class="city-panel active" id="city-panel-items">
+      <div class="city-items-grid" id="city-items-grid"></div>
+    </div>
+    <div class="city-panel" id="city-panel-categories">
+      <div id="city-categories-list"></div>
+    </div>
+    <div class="city-panel" id="city-panel-collections">
+      <div class="city-empty">
+        <div class="city-empty-icon">◫</div>
+        Collections בקרוב ✦
+      </div>
+    </div>
+    <div class="city-panel" id="city-panel-artists">
+      <div id="city-artists-list"></div>
+    </div>
   </div>
 </div>
 
@@ -3747,6 +4023,7 @@ function _rowToItem(row, idx) {
     year:           g('year') || null,
     neighborhood:   g('neighborhood') || '',
     gravityScore:   parseInt(g('gravityScore','gravity_score','gravityscore','gravity','score')) || 10,
+    thumbnail:      g('thumbnail','image') || '',
   };
 }
 
@@ -4239,7 +4516,7 @@ function initGallery() {
           <div class="detail-info-layer-a">
             <div class="detail-info-meta">
               <span>${item.creatorName || item.creator || ''}</span>
-              ${(item.city || item.location) ? `<span class="detail-info-meta-dot">·</span><span>${item.city || item.location}</span>` : ''}
+              ${(item.city || item.location) ? `<span class="detail-info-meta-dot">·</span><span class="detail-city-link" onclick="event.stopPropagation(); openCityPage('${item.city || item.location}')" style="cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.3);padding-bottom:1px;">${item.city || item.location}</span>` : ''}
               ${item.year ? `<span class="detail-info-meta-dot">·</span><span>${item.year}</span>` : ''}
             </div>
           </div>
@@ -4647,6 +4924,7 @@ function closeDetailSeamless() {
     currentItem         = null;
     card.classList.remove('detail-active');
     galleryEl?.classList.remove('detail-mode');
+    document.body.classList.remove('detail-view-active');
 
     // ── STEP 3 (2500ms stage time): fast fade-out to reveal gallery ──
     setTimeout(() => {
@@ -4680,6 +4958,7 @@ function _closeSeamlessImmediate() {
   }
   _seamlessActiveCard.classList.remove('detail-active');
   document.getElementById('gallery-screen').classList.remove('detail-mode');
+  document.body.classList.remove('detail-view-active');
   if (_seamlessControls) { _seamlessControls.dispose(); _seamlessControls = null; }
   window._detailControls = null;
   _seamlessActiveCard = _seamlessItemId = null;
@@ -6246,6 +6525,144 @@ function closePublicProfile() {
   document.getElementById('public-profile-page').classList.remove('open');
 }
 
+// ── City Page ──
+function openCityPage(cityName) {
+  const fadeEl = document.getElementById('fade-overlay');
+  const logoEl = document.getElementById('global-logo');
+  const vid    = document.getElementById('transition-video');
+
+  // ── STEP 1: Play transition video ──
+  if (logoEl) logoEl.style.opacity = '0';
+  if (vid)    { vid.currentTime = 0; vid.play().catch(() => {}); }
+  if (fadeEl) fadeEl.style.opacity = '1';
+
+  setTimeout(() => {
+    // ── STEP 2: Populate and open city page behind overlay ──
+    const page = document.getElementById('city-page');
+    document.getElementById('city-page-name').textContent = cityName;
+
+    const cityItems = ITEMS.filter(i =>
+      (i.city || i.location || '').includes(cityName)
+    );
+
+    const grid = document.getElementById('city-items-grid');
+    grid.innerHTML = cityItems.length
+      ? cityItems.map(_cityItemCard).join('')
+      : '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;direction:rtl;">אין פריטים עדיין</div>';
+
+    const seen = new Set();
+    const artists = cityItems.filter(i => {
+      const name = i.creatorName || i.creator;
+      if (seen.has(name)) return false;
+      seen.add(name); return true;
+    });
+    document.getElementById('city-artists-list').innerHTML = artists.length ? artists.map(i => {
+      const name = i.creatorName || i.creator;
+      const count = cityItems.filter(x => (x.creatorName || x.creator) === name).length;
+      return `
+        <div class="city-artist-row" onclick="openPublicProfile('${name}'); closeCityPage();">
+          <div class="city-artist-avatar">${name.charAt(0)}</div>
+          <div class="city-artist-info">
+            <div class="city-artist-name">${name}</div>
+            <div class="city-artist-count">${count} פריט${count !== 1 ? 'ים' : ''}</div>
+          </div>
+        </div>
+      `;
+    }).join('') : '<div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;">אין אמנים עדיין</div>';
+
+    // Populate categories
+    const catMap = {};
+    cityItems.forEach(i => {
+      const c = i.category || 'אחר';
+      catMap[c] = (catMap[c] || 0) + 1;
+    });
+    document.getElementById('city-categories-list').innerHTML = Object.entries(catMap).length
+      ? Object.entries(catMap).sort((a,b) => b[1]-a[1]).map(([cat, count]) => `
+        <div class="city-category-row" onclick="filterCityByCategory('${cat}')">
+          <div class="city-category-name">${cat}</div>
+          <div class="city-category-count">
+            <span>${count} פריטים</span>
+            <span class="city-category-arrow">←</span>
+          </div>
+        </div>
+      `).join('')
+      : '<div style="padding:40px;text-align:center;color:var(--muted);">אין קטגוריות</div>';
+
+    switchCityTab('items');
+    page.classList.add('open');
+    history.pushState({ gm: 'active' }, '');
+
+    // ── STEP 3: Fade out overlay ──
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (fadeEl) fadeEl.style.opacity = '0';
+          if (logoEl) logoEl.style.opacity = '0.9';
+          setTimeout(() => { if (vid) { vid.pause(); vid.currentTime = 0; } }, 600);
+        });
+      });
+    }, 2000);
+
+  }, 500);
+}
+
+function closeCityPage() {
+  const fadeEl = document.getElementById('fade-overlay');
+  const logoEl = document.getElementById('global-logo');
+  const vid    = document.getElementById('transition-video');
+
+  if (logoEl) logoEl.style.opacity = '0';
+  if (vid)    { vid.currentTime = 0; vid.play().catch(() => {}); }
+  if (fadeEl) fadeEl.style.opacity = '1';
+
+  setTimeout(() => {
+    document.getElementById('city-page').classList.remove('open');
+
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (fadeEl) fadeEl.style.opacity = '0';
+          if (logoEl) logoEl.style.opacity = '0.9';
+          setTimeout(() => { if (vid) { vid.pause(); vid.currentTime = 0; } }, 600);
+        });
+      });
+    }, 2000);
+  }, 500);
+}
+
+function _cityItemCard(item) {
+  const raw = item.thumbnail || '';
+  const imgUrl = raw
+    ? (raw.startsWith('http') ? raw : 'https://raw.githubusercontent.com/avisiman/givenmakes-assets/main/assets/' + raw)
+    : null;
+  const inner = imgUrl
+    ? '<img class="city-item-img" src="' + imgUrl + '" alt="' + item.title + '" loading="lazy">'
+    : '<div class="city-item-emoji-fallback">' + (item.emoji || '📦') + '</div>';
+  return '<div class="city-item-card" onclick="openDetail(' + item.id + '); closeCityPage();">' + inner + '</div>';
+}
+
+function switchCityTab(tab) {
+  document.querySelectorAll('.city-tab').forEach((el, i) => {
+    const tabs = ['items', 'categories', 'collections', 'artists'];
+    el.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.city-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById(`city-panel-${tab}`);
+  if (panel) panel.classList.add('active');
+}
+
+function filterCityByCategory(cat) {
+  // Switch to items tab and filter by category
+  const cityName = document.getElementById('city-page-name').textContent;
+  const filtered = ITEMS.filter(i =>
+    (i.city || i.location || '').includes(cityName) &&
+    (i.category || 'אחר') === cat
+  );
+  const grid = document.getElementById('city-items-grid');
+  grid.innerHTML = filtered.map(_cityItemCard).join('');
+  switchCityTab('items');
+}
+
 // ── City selection ──
 function selectCity(cityId) {
   showToast(`גלריית ${cityId === 'tel-aviv' ? 'תל אביב' : cityId === 'haifa' ? 'חיפה' : 'ירושלים'} — בקרוב ✦`);
@@ -6290,6 +6707,12 @@ window.addEventListener('popstate', () => {
   }
 
   // 3. Public profile
+  if (document.getElementById('city-page').classList.contains('open')) {
+    closeCityPage();
+    history.pushState({ gm: 'active' }, '');
+    return;
+  }
+
   if (document.getElementById('public-profile-page').classList.contains('open')) {
     closePublicProfile();
     history.pushState({ gm: 'active' }, '');
